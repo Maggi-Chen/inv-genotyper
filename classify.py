@@ -1,6 +1,3 @@
-import gzip
-import sys
-import logging
 import math
 
 def read_inv_list(inv_list):
@@ -52,13 +49,14 @@ def genotype(inv, profile_path, vcffile, sample_idx):
 
     # get list of SNP calls from VCF
     try:
-        allsnpcall = vcffile.query(chrom, min_tag_pos-1000, max_tag_pos+1000)
+        allsnpcall = vcffile.fetch(chrom, min_tag_pos-1000, max_tag_pos+1000)
     except:
         print('Warning: Failed to extract SNP for '+inv+', skipping...')
         return []
 
     detected_tagsnp=0
     for snpcall in allsnpcall:
+        snpcall=snpcall.split('\t')
         # skip non-SNPs
         if len(snpcall[3])!=1 or len(snpcall[4])!=1:
             continue
@@ -89,12 +87,6 @@ def genotype(inv, profile_path, vcffile, sample_idx):
                 snp_genotype[sampleid[i]]['Homo']+=1
             elif gtinfo[i] in ['1/0','0/1','1|0','0|1']: 
                 snp_genotype[sampleid[i]]['Hetero']+=1
-    f=open('matrics_inv_tag-'+inv,'w')
-    for samplei in range(len(samplesnp)):
-        for tagi in range(len(samplesnp[sampleid[samplei]])):
-            f.write(str(samplesnp[sampleid[samplei]][tagi])+'\t')
-        f.write('\n')
-    f.close()
     print('Found ',detected_tagsnp,'/',len(tagsnp), ' tag SNPs for ',inv)
 
     # calculate distance to pos and neg center

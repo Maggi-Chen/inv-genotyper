@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import logging
 import sys
-import os
-import time 
-import gzip
-import tabix
+import pysam
 
 # INV genotyper config
 __appname__ = "INV genotyper"
@@ -20,15 +16,11 @@ def do_work(args):
 
     # open VCF file containing SNP calls
     # get sample info from VCF header
-    f=gzip.open(args.vcf,'rt')
-    vcffile=tabix.open(args.vcf)
-    a=f.readline()
-
-    while a.startswith('##'):
-        a=f.readline()
-
-    sampleinfo=a[:-1].split('\t')
-
+    vcffile=pysam.TabixFile(args.vcf)
+    header=vcffile.header
+    for line in header:
+        if line.split('\t')[0]=="#CHROM":
+            sampleinfo=line.split('\t')
 
     # calculate distance for each INV
     inv_results = {}
