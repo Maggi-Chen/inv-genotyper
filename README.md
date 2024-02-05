@@ -22,6 +22,6 @@ Draft date: Feb. 4, 2024
 Dependencies:
 
 * python3.8
-* pysam  (tested with version 0.19.0)
-* pytabix  (tested with version 2.15)
+* pysam  (tested with version 0.22.0)
+* pytabix  (tested with version 0.1)
 
