@@ -56,7 +56,7 @@ def parse_arguments(argv):
     )
 
     parser.add_argument(
-        "--min_score", default=0, help="Minimal confidence score of reporte INV [0]"
+        "--min_score", type=float, default=0, help="Minimal confidence score of reporte INV [0]"
     )
 
     return parser.parse_args(argv)
