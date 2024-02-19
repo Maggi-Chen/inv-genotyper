@@ -11,6 +11,16 @@ def read_inv_list(inv_list):
     return inv_list
 
 
+def read_bed(bedpath):
+    confident_region={}
+    allbed=open(bedpath,'r').read().split('\n')[:-1]
+    for line in allbed:
+        line=line.split('\t')
+        if line[0] not in confident_region:
+            confident_region[line[0]]=[]
+        confident_region[line[0]]+=[[int(line[1]),int(line[2])]]
+    return confident_region
+
 def distance(a,b):
     if len(a)!=len(b):
         print('length of two position do not match.')
@@ -24,16 +34,25 @@ def distance(a,b):
     return sumdis
 
 
-def genotype(inv, profile_path, vcffile, sample_idx):
+def genotype(inv, profile_path, vcffile, sample_idx, confident_region):
+    print('Start genotyping for:'+inv)
     # read tag snp info from profile
     tagsnp=open(profile_path,'r').read().split('\n')[:-1]
+
+    if confident_region:
+        inbed=[]
+        for snp in tagsnp:
+            for region in confident_region[inv.split('-')[0]]:
+                if region[0] <= int(snp.split('\t')[2]) <= region[1]:
+                    inbed+=[snp];break
+        print('Skipped ',len(tagsnp)-len(inbed),'/',len(tagsnp),' tag SNPs that are not in BED regions.')
+        tagsnp=inbed
     chrom=tagsnp[0].split('\t')[1]
     constant=[float(c.split('\t')[5])*abs(float(c.split('\t')[5])) for c in tagsnp]
     allpos=[int(c.split('\t')[2]) for c in tagsnp]
     min_tag_pos=min(allpos)
     max_tag_pos=max(allpos)
 
-    print('Start genotyping for:'+inv)
     samplesnp={}
     sampleid=[]
     snp_genotype={}

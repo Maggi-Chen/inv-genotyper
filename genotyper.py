@@ -22,10 +22,16 @@ def do_work(args):
         if line.split('\t')[0]=="#CHROM":
             sampleinfo=line.split('\t')
 
+    # Read in confident bed file if provided
+    if args.bed:
+        confident_region = classify.read_bed(args.bed)
+    else:
+        confident_region = None
+
     # calculate distance for each INV
     inv_results = {}
     for inv in inv_profile:
-        inv_results[inv] = classify.genotype(inv, inv_profile[inv], vcffile, sampleinfo)
+        inv_results[inv] = classify.genotype(inv, inv_profile[inv], vcffile, sampleinfo, confident_region)
 
     # write results into output
     classify.write_output(inv_results,args.output, args.min_score)
@@ -56,7 +62,11 @@ def parse_arguments(argv):
     )
 
     parser.add_argument(
-        "--min_score", type=float, default=0, help="Minimal confidence score of reporte INV [0]"
+        "--min_score", default=0, type=float, help="Minimal confidence score of reporte INV [0]"
+    )
+
+    parser.add_argument(
+        "--bed", default=None, help="Confident region for VCF file [None]"
     )
 
     return parser.parse_args(argv)
