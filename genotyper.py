@@ -31,7 +31,7 @@ def do_work(args):
     # calculate distance for each INV
     inv_results = {}
     for inv in inv_profile:
-        inv_results[inv] = classify.genotype(inv, inv_profile[inv], vcffile, sampleinfo, confident_region)
+        inv_results[inv] = classify.genotype(inv, inv_profile[inv], vcffile, sampleinfo, confident_region, args.skip_missing_tagsnps)
 
     # write results into output
     classify.write_output(inv_results,args.output, args.min_score)
@@ -67,6 +67,11 @@ def parse_arguments(argv):
 
     parser.add_argument(
         "--bed", default=None, help="Confident region for VCF file [None]"
+    )
+
+    parser.add_argument(
+        "--skip_missing_tagsnps", default=False, action='store_true',
+        help="Skip missing Tag SNPs [False]"
     )
 
     return parser.parse_args(argv)

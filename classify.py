@@ -34,11 +34,12 @@ def distance(a,b):
     return sumdis
 
 
-def genotype(inv, profile_path, vcffile, sample_idx, confident_region):
+def genotype(inv, profile_path, vcffile, sample_idx, confident_region, skip_missing):
     print('Start genotyping for:'+inv)
     # read tag snp info from profile
     tagsnp=open(profile_path,'r').read().split('\n')[:-1]
 
+    # Skip Tag SNPs that are not in confident BED file
     if confident_region:
         inbed=[]
         for snp in tagsnp:
@@ -47,6 +48,15 @@ def genotype(inv, profile_path, vcffile, sample_idx, confident_region):
                     inbed+=[snp];break
         print('Skipped ',len(tagsnp)-len(inbed),'/',len(tagsnp),' tag SNPs that are not in BED regions.')
         tagsnp=inbed
+
+    # Skip Tag SNPs that are missing in VCF but should be present in >=10 individuals according to AF
+    highaf_tagsnp=[]
+    if skip_missing:
+        for snp in tagsnp:
+            expected=float(snp.split('\t')[6])*(len(sample_idx)-9)
+            if float(snp.split('\t')[6])>=0.2 and expected>=10:
+                highaf_tagsnp+=[snp]
+
     chrom=tagsnp[0].split('\t')[1]
     constant=[float(c.split('\t')[5])*abs(float(c.split('\t')[5])) for c in tagsnp]
     allpos=[int(c.split('\t')[2]) for c in tagsnp]
@@ -73,7 +83,7 @@ def genotype(inv, profile_path, vcffile, sample_idx, confident_region):
         print('Warning: Failed to extract SNP for '+inv+', skipping...')
         return []
 
-    detected_tagsnp=0
+    detected_tagsnp=[]
     for snpcall in allsnpcall:
         snpcall=snpcall.split('\t')
         # skip non-SNPs
@@ -91,7 +101,7 @@ def genotype(inv, profile_path, vcffile, sample_idx, confident_region):
         # skip non-tag SNPs
         if istagsnp ==0:
             continue
-        detected_tagsnp+=1
+        detected_tagsnp+=[tagsnp[tagidx]]
 
         # find GT position for each sample
         gtinfo=snpcall[9:]
@@ -106,7 +116,22 @@ def genotype(inv, profile_path, vcffile, sample_idx, confident_region):
                 snp_genotype[sampleid[i]]['Homo']+=1
             elif gtinfo[i] in ['1/0','0/1','1|0','0|1']: 
                 snp_genotype[sampleid[i]]['Hetero']+=1
-    print('Found ',detected_tagsnp,'/',len(tagsnp), ' tag SNPs for ',inv)
+
+
+    missing_highaf_tagsnp = [snp for snp in highaf_tagsnp if snp not in detected_tagsnp]
+    num_missing_snp=0
+    if missing_highaf_tagsnp!=[]:
+        for missed_snp in missing_highaf_tagsnp:
+            tagidx=tagsnp.index(missed_snp)
+            print('skip ',missed_snp.split('\t')[0], len(sampleid)*float(missed_snp.split('\t')[6]))
+            for i in range(numsamples):
+                if samplesnp[sampleid[i]][tagidx] < 0:
+                    samplesnp[sampleid[i]][tagidx] = 0
+                else:
+                    print('Found BUG here...')
+            num_missing_snp+=1
+        print('Skipped ',num_missing_snp,'missing Tag SNPs that should be in >=10 individuals')
+    print('Found ', len(detected_tagsnp),'/',len(tagsnp)-num_missing_snp, ' tag SNPs for ',inv)
 
     # calculate distance to pos and neg center
     inv_calls=[]
