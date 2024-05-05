@@ -45,9 +45,11 @@ def genotype(inv, profile_path, vcffile, sample_idx, confident_region, skip_miss
         for snp in tagsnp:
             for region in confident_region[inv.split('-')[0]]:
                 if region[0] <= int(snp.split('\t')[2]) <= region[1]:
-                    inbed+=[snp];break
+                    inbed += [snp];break
         print('Skipped ',len(tagsnp)-len(inbed),'/',len(tagsnp),' tag SNPs that are not in BED regions.')
-        tagsnp=inbed
+        tagsnp = inbed
+        if tagsnp == []:
+            return []
 
     # Skip Tag SNPs that are missing in VCF but should be present in >=10 individuals according to AF
     highaf_tagsnp=[]
